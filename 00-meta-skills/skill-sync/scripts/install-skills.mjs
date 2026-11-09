@@ -53,6 +53,7 @@ const tools = [];
 let useSymlink = false;
 let dryRun = false;
 let onlyCategories = null;
+let onlySkills = null;
 let skipDetect = false;
 let doUninstall = false;
 let doRollback = false;
@@ -67,6 +68,7 @@ for (let i = 0; i < args.length; i++) {
   else if (a === "--symlink") useSymlink = true;
   else if (a === "--dry-run") dryRun = true;
   else if (a === "--only") onlyCategories = args[++i].split(",").map((s) => s.trim());
+  else if (a === "--skills") onlySkills = new Set(args[++i].split(",").map((s) => s.trim()));
   else if (a === "--all-tools") skipDetect = true;
   else if (a === "--uninstall") doUninstall = true;
   else if (a === "--rollback") doRollback = true;
@@ -143,8 +145,8 @@ const AGENT_TARGETS = [
     id: "antigravity",
     name: "Antigravity",
     detect: (h) => existsSync(join(h, ".gemini", "antigravity-cli")) || existsSync(join(h, ".gemini", "antigravity")) || existsSync(join(h, ".agents")) || hasBinary("antigravity") || hasBinary("agy"),
-    globalInstallPath: (h) => existsSync(join(h, ".gemini", "antigravity")) ? join(h, ".gemini", "antigravity", "skills") : join(h, ".agents", "skills"),
-    projectInstallPath: (target) => existsSync(join(target, ".gemini", "antigravity")) ? join(target, ".gemini", "antigravity", "skills") : join(target, ".agents", "skills"),
+    globalInstallPath: (h) => join(h, ".gemini", "config", "skills"),
+    projectInstallPath: (target) => join(target, ".agents", "skills"),
   },
   {
     id: "kiro",
@@ -282,6 +284,9 @@ function collectSkills(root) {
           } catch {}
         }
         const skillName = basename(dir);
+        if (onlySkills && !onlySkills.has(skillName)) {
+          continue;
+        }
         // Deprecated skills are excluded from every install plan (unless the
         // user passes --include-deprecated). The catalog.json `deprecated`
         // flag and the SKILL.md frontmatter are the two sources; both are
